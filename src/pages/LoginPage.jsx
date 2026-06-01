@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { login } from "../services/api.js";
+import { useAuth } from "../context/AuthContext.jsx";
 import "./Login.css";
 
 export default function LoginPage() {
@@ -9,28 +11,31 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { loginUser } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
     if (!email || !password) {
       setError("Please fill in all fields.");
       return;
     }
-    if (email == "admin" || password == "admin") {
-      setError("success");
-      await new Promise((r) => setTimeout(r, 1600));
-      navigate("/dashboard");
-      return;
-    }
 
     setLoading(true);
-    // Simulate an API call — replace with real auth logic
-    await new Promise((r) => setTimeout(r, 1600));
-    setLoading(false);
-    setError("Invalid credentials. Please try again.");
+    try {
+      const data = await login({ email, password });
+      if (data?.token) {
+        loginUser(data.token);
+        navigate("/dashboard");
+      } else {
+        setError("Invalid credentials. Please try again.");
+      }
+    } catch (error) {
+      setError("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

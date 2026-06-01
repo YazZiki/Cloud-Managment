@@ -1,107 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import {
+  getAllGovEntities,
+  approveGovEntity,
+  rejectGovEntity,
+  suspendGovEntity,
+} from "../../services/api.js";
 import "./GovEntities.css";
-
-/* ─── Initial data ───────────────────────────────────────────────────────── */
-const INITIAL_ENTITIES = [
-  {
-    id: 1,
-    name: "Ministry of Finance",
-    sector: "Finance",
-    country: "Saudi Arabia",
-    contact: "Ahmed Al-Rashid",
-    email: "a.rashid@mof.gov",
-    phone: "+966 11 405 0000",
-    established: "1932",
-    employees: "4,200",
-    status: "approved",
-    score: 91,
-    notes: "Lead entity for national budget oversight.",
-  },
-  {
-    id: 2,
-    name: "National Health Authority",
-    sector: "Health",
-    country: "Saudi Arabia",
-    contact: "Sara Al-Otaibi",
-    email: "s.otaibi@nha.gov",
-    phone: "+966 11 800 1234",
-    established: "2016",
-    employees: "12,500",
-    status: "pending",
-    score: 67,
-    notes: "Regulates healthcare services nationwide.",
-  },
-  {
-    id: 3,
-    name: "Transport Directorate",
-    sector: "Transport",
-    country: "Saudi Arabia",
-    contact: "Khalid Mansour",
-    email: "k.mansour@transport.gov",
-    phone: "+966 11 218 3300",
-    established: "1965",
-    employees: "3,800",
-    status: "approved",
-    score: 84,
-    notes: "Oversees land, air, and sea transport.",
-  },
-  {
-    id: 4,
-    name: "Education Bureau",
-    sector: "Education",
-    country: "Saudi Arabia",
-    contact: "Noura Al-Fahad",
-    email: "n.fahad@moe.gov",
-    phone: "+966 11 404 2888",
-    established: "1954",
-    employees: "95,000",
-    status: "rejected",
-    score: 42,
-    notes: "Pending compliance audit for Q2 2026.",
-  },
-  {
-    id: 5,
-    name: "Telecom Regulator (CITC)",
-    sector: "Telecom",
-    country: "Saudi Arabia",
-    contact: "Omar Bahamdan",
-    email: "o.bahamdan@citc.gov",
-    phone: "+966 11 461 0000",
-    established: "2001",
-    employees: "820",
-    status: "suspended",
-    score: 55,
-    notes: "Under review following data breach report.",
-  },
-  {
-    id: 6,
-    name: "General Authority of Customs",
-    sector: "Customs",
-    country: "Saudi Arabia",
-    contact: "Faisal Al-Ghamdi",
-    email: "f.ghamdi@customs.gov",
-    phone: "+966 12 222 0000",
-    established: "1986",
-    employees: "6,100",
-    status: "approved",
-    score: 78,
-    notes: "",
-  },
-  {
-    id: 7,
-    name: "Saudi Space Commission",
-    sector: "Technology",
-    country: "Saudi Arabia",
-    contact: "Reem Al-Harbi",
-    email: "r.harbi@ssc.gov",
-    phone: "+966 11 000 7700",
-    established: "2018",
-    employees: "310",
-    status: "pending",
-    score: 60,
-    notes: "New entity; onboarding in progress.",
-  },
-];
 
 const SECTORS = [
   "Finance",
@@ -117,17 +21,16 @@ const SECTORS = [
   "Interior",
   "Environment",
 ];
-const STATUSES = ["approved", "pending", "rejected", "suspended"];
-
-let nextId = INITIAL_ENTITIES.length + 1;
+const STATUS_MAP = {
+  0: "pending",
+  1: "approved",
+  2: "rejected",
+  3: "suspended",
+};
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 function scoreClass(s) {
   return s >= 75 ? "high" : s >= 55 ? "medium" : "low";
-}
-
-function IconSvg({ d, d2, circle, rect, poly, line, path2 }) {
-  return null; // placeholder — see Icon component below
 }
 
 function Icon({ name }) {
@@ -207,36 +110,57 @@ function Icon({ name }) {
   return icons[name] || null;
 }
 
-/* ─── Empty form template ─────────────────────────────────────────────────── */
+/* ─── Empty form template ────────────────────────────────────────────────── */
 const emptyForm = {
-  name: "",
-  sector: "Finance",
-  country: "Saudi Arabia",
-  contact: "",
-  email: "",
+  entityName: "",
+  entityEmail: "",
   phone: "",
-  established: "",
-  employees: "",
-  status: "pending",
-  score: 50,
-  notes: "",
+  address: "",
+  adminFullName: "",
+  adminEmail: "",
+  password: "",
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MAIN COMPONENT
 ═══════════════════════════════════════════════════════════════════════════ */
 export default function GovEntities() {
-  const [entities, setEntities] = useState(INITIAL_ENTITIES);
+  const [entities, setEntities] = useState([]);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilter] = useState("all");
-  const [modal, setModal] = useState(null); // null | { mode: 'view'|'edit'|'create'|'delete', entity }
+  const [modal, setModal] = useState(null);
   const [form, setForm] = useState(emptyForm);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  /* ── Load from API on mount ── */
+  useEffect(() => {
+    loadEntities();
+  }, []);
+
+  const loadEntities = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await getAllGovEntities();
+      const normalized = (Array.isArray(data) ? data : []).map((e) => ({
+        ...e,
+        status: STATUS_MAP[e.status] ?? "pending",
+      }));
+      setEntities(normalized);
+    } catch (err) {
+      console.error("Failed to load entities:", err);
+      setError("Failed to load entities. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   /* ── Derived list ── */
   const visible = entities.filter((e) => {
     const matchSearch =
-      e.name.toLowerCase().includes(search.toLowerCase()) ||
-      e.sector.toLowerCase().includes(search.toLowerCase());
+      (e.name || "").toLowerCase().includes(search.toLowerCase()) ||
+      (e.adminFullName || "").toLowerCase().includes(search.toLowerCase());
     const matchStatus = filterStatus === "all" || e.status === filterStatus;
     return matchSearch && matchStatus;
   });
@@ -250,9 +174,7 @@ export default function GovEntities() {
   ).length;
 
   /* ── Modal helpers ── */
-  const openView = (e) => {
-    setModal({ mode: "view", entity: e });
-  };
+  const openView = (e) => setModal({ mode: "view", entity: e });
   const openEdit = (e) => {
     setForm({ ...e });
     setModal({ mode: "edit", entity: e });
@@ -261,17 +183,15 @@ export default function GovEntities() {
     setForm({ ...emptyForm });
     setModal({ mode: "create", entity: null });
   };
-  const openDelete = (e) => {
-    setModal({ mode: "delete", entity: e });
-  };
+  const openDelete = (e) => setModal({ mode: "delete", entity: e });
   const closeModal = () => setModal(null);
 
   const handleFormChange = (field, value) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
-  /* ── CRUD actions ── */
+  /* ── Local CRUD (optimistic — swap for real API calls as needed) ── */
   const handleCreate = () => {
-    const newEntity = { ...form, id: nextId++, score: Number(form.score) };
+    const newEntity = { ...form, id: Date.now(), score: Number(form.score) };
     setEntities((prev) => [newEntity, ...prev]);
     closeModal();
   };
@@ -290,16 +210,65 @@ export default function GovEntities() {
     closeModal();
   };
 
-  const handleStatusChange = (id, newStatus) => {
-    setEntities((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, status: newStatus } : e)),
-    );
-    // if modal is open on this entity, update it
-    if (modal?.entity?.id === id) {
-      setModal((m) => ({ ...m, entity: { ...m.entity, status: newStatus } }));
-      if (modal.mode === "edit") setForm((f) => ({ ...f, status: newStatus }));
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      if (newStatus === "approved") await approveGovEntity(id);
+      if (newStatus === "rejected") await rejectGovEntity(id);
+      if (newStatus === "suspended") await suspendGovEntity(id);
+
+      setEntities((prev) =>
+        prev.map((e) => (e.id === id ? { ...e, status: newStatus } : e)),
+      );
+
+      if (modal?.entity?.id === id) {
+        setModal((m) => ({ ...m, entity: { ...m.entity, status: newStatus } }));
+      }
+    } catch (err) {
+      console.error("Failed to update status:", err);
+      alert("Failed to update status. Please try again.");
     }
   };
+
+  /* ── Loading / error states ── */
+  if (loading) {
+    return (
+      <div
+        className="ge-wrap"
+        style={{ alignItems: "center", justifyContent: "center" }}
+      >
+        <div style={{ color: "rgba(53,88,114,0.5)", fontSize: "0.9rem" }}>
+          Loading entities…
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div
+        className="ge-wrap"
+        style={{ alignItems: "center", justifyContent: "center" }}
+      >
+        <div style={{ color: "#c0392b", fontSize: "0.9rem" }}>{error}</div>
+        <button
+          onClick={loadEntities}
+          style={{
+            marginTop: 12,
+            padding: "8px 18px",
+            background: "#355872",
+            color: "#f7f8f0",
+            border: "none",
+            borderRadius: 8,
+            cursor: "pointer",
+            fontFamily: "Syne, sans-serif",
+            fontWeight: 700,
+          }}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   /* ─────────────────────────────────────────────────────────────────────── */
   return (
@@ -321,7 +290,7 @@ export default function GovEntities() {
           onChange={(e) => setFilter(e.target.value)}
         >
           <option value="all">All Statuses</option>
-          {STATUSES.map((s) => (
+          {Object.values(STATUS_MAP).map((s) => (
             <option key={s} value={s}>
               {s.charAt(0).toUpperCase() + s.slice(1)}
             </option>
@@ -380,11 +349,11 @@ export default function GovEntities() {
           <table className="ge-table">
             <thead>
               <tr>
-                <th>Entity</th>
-                <th>Sector</th>
-                <th>Country</th>
+                <th>Entity Name</th>
+                <th>Entity Email</th>
+                <th>Phone</th>
+                <th>Address</th>
                 <th>Status</th>
-                <th>Compliance Score</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -401,24 +370,17 @@ export default function GovEntities() {
                 visible.map((e) => (
                   <tr key={e.id} onClick={() => openView(e)}>
                     <td>
-                      <div className="ge-entity-name">{e.name}</div>
-                      <div className="ge-entity-sub">{e.contact}</div>
+                      <div className="ge-entity-name">{e.name || "—"}</div>
                     </td>
-                    <td>{e.sector}</td>
-                    <td>{e.country}</td>
+                    <td>{e.email || "—"}</td>
+                    <td>{e.phone || "—"}</td>
+                    <td>{e.address || "—"}</td>
                     <td>
-                      <span className={`ge-pill ${e.status}`}>{e.status}</span>
-                    </td>
-                    <td>
-                      <div className="ge-score-wrap">
-                        <div className="ge-score-track">
-                          <div
-                            className={`ge-score-fill ${scoreClass(e.score)}`}
-                            style={{ width: `${e.score}%` }}
-                          />
-                        </div>
-                        <span className="ge-score-num">{e.score}%</span>
-                      </div>
+                      <span className={`ge-pill ${e.status}`}>
+                        {e.status
+                          ? e.status.charAt(0).toUpperCase() + e.status.slice(1)
+                          : "—"}
+                      </span>
                     </td>
                     <td>
                       <div
@@ -468,9 +430,6 @@ export default function GovEntities() {
                 <div className="ge-modal-header">
                   <div>
                     <div className="ge-modal-title">{modal.entity.name}</div>
-                    <div className="ge-modal-sub">
-                      {modal.entity.sector} · {modal.entity.country}
-                    </div>
                   </div>
                   <button className="ge-modal-close" onClick={closeModal}>
                     <Icon name="close" />
@@ -478,7 +437,6 @@ export default function GovEntities() {
                 </div>
 
                 <div className="ge-modal-body">
-                  {/* Status change tabs */}
                   <div
                     style={{
                       marginBottom: 6,
@@ -492,7 +450,7 @@ export default function GovEntities() {
                     Update Status
                   </div>
                   <div className="ge-status-tabs">
-                    {STATUSES.map((s) => (
+                    {Object.values(STATUS_MAP).map((s) => (
                       <button
                         key={s}
                         className={`ge-status-tab${modal.entity.status === s ? " " + s : ""}`}
@@ -503,63 +461,29 @@ export default function GovEntities() {
                     ))}
                   </div>
 
-                  {/* Details */}
                   <div className="ge-detail-grid">
                     <div className="ge-detail-item">
-                      <div className="ge-detail-label">Contact Person</div>
+                      <div className="ge-detail-label">Entity Name</div>
                       <div className="ge-detail-value">
-                        {modal.entity.contact}
+                        {modal.entity.name || "—"}
                       </div>
                     </div>
                     <div className="ge-detail-item">
-                      <div className="ge-detail-label">Email</div>
+                      <div className="ge-detail-label">Entity Email</div>
                       <div className="ge-detail-value">
-                        {modal.entity.email}
+                        {modal.entity.email || "—"}
                       </div>
                     </div>
                     <div className="ge-detail-item">
                       <div className="ge-detail-label">Phone</div>
                       <div className="ge-detail-value">
-                        {modal.entity.phone}
+                        {modal.entity.phone || "—"}
                       </div>
                     </div>
                     <div className="ge-detail-item">
-                      <div className="ge-detail-label">Established</div>
+                      <div className="ge-detail-label">Address</div>
                       <div className="ge-detail-value">
-                        {modal.entity.established}
-                      </div>
-                    </div>
-                    <div className="ge-detail-item">
-                      <div className="ge-detail-label">Employees</div>
-                      <div className="ge-detail-value">
-                        {modal.entity.employees}
-                      </div>
-                    </div>
-                    <div className="ge-detail-item">
-                      <div className="ge-detail-label">Compliance Score</div>
-                      <div className="ge-detail-value">
-                        <div
-                          className="ge-score-wrap"
-                          style={{ maxWidth: 160 }}
-                        >
-                          <div className="ge-score-track">
-                            <div
-                              className={`ge-score-fill ${scoreClass(modal.entity.score)}`}
-                              style={{ width: `${modal.entity.score}%` }}
-                            />
-                          </div>
-                          <span className="ge-score-num">
-                            {modal.entity.score}%
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="ge-detail-item">
-                      <div className="ge-detail-label">Current Status</div>
-                      <div className="ge-detail-value">
-                        <span className={`ge-pill ${modal.entity.status}`}>
-                          {modal.entity.status}
-                        </span>
+                        {modal.entity.address || "—"}
                       </div>
                     </div>
                   </div>
@@ -608,9 +532,7 @@ export default function GovEntities() {
                         : "Edit Entity"}
                     </div>
                     <div className="ge-modal-sub">
-                      {modal.mode === "create"
-                        ? "Fill in the details below"
-                        : `Editing: ${modal.entity.name}`}
+                      {modal.entity.entityEmail}
                     </div>
                   </div>
                   <button className="ge-modal-close" onClick={closeModal}>
@@ -625,65 +547,24 @@ export default function GovEntities() {
                       <input
                         className="ge-input"
                         placeholder="e.g. Ministry of Finance"
-                        value={form.name}
+                        value={form.entityName}
                         onChange={(e) =>
-                          handleFormChange("name", e.target.value)
+                          handleFormChange("entityName", e.target.value)
                         }
                       />
                     </div>
-
                     <div className="ge-field">
-                      <label className="ge-label">Sector</label>
-                      <select
-                        className="ge-select"
-                        value={form.sector}
-                        onChange={(e) =>
-                          handleFormChange("sector", e.target.value)
-                        }
-                      >
-                        {SECTORS.map((s) => (
-                          <option key={s}>{s}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="ge-field">
-                      <label className="ge-label">Country</label>
-                      <input
-                        className="ge-input"
-                        placeholder="e.g. Saudi Arabia"
-                        value={form.country}
-                        onChange={(e) =>
-                          handleFormChange("country", e.target.value)
-                        }
-                      />
-                    </div>
-
-                    <div className="ge-field">
-                      <label className="ge-label">Contact Person</label>
-                      <input
-                        className="ge-input"
-                        placeholder="Full name"
-                        value={form.contact}
-                        onChange={(e) =>
-                          handleFormChange("contact", e.target.value)
-                        }
-                      />
-                    </div>
-
-                    <div className="ge-field">
-                      <label className="ge-label">Email</label>
+                      <label className="ge-label">Entity Email</label>
                       <input
                         className="ge-input"
                         type="email"
-                        placeholder="contact@entity.gov"
-                        value={form.email}
+                        placeholder="entity@gov.sa"
+                        value={form.entityEmail}
                         onChange={(e) =>
-                          handleFormChange("email", e.target.value)
+                          handleFormChange("entityEmail", e.target.value)
                         }
                       />
                     </div>
-
                     <div className="ge-field">
                       <label className="ge-label">Phone</label>
                       <input
@@ -695,79 +576,54 @@ export default function GovEntities() {
                         }
                       />
                     </div>
-
-                    <div className="ge-field">
-                      <label className="ge-label">Established</label>
-                      <input
-                        className="ge-input"
-                        placeholder="Year"
-                        value={form.established}
-                        onChange={(e) =>
-                          handleFormChange("established", e.target.value)
-                        }
-                      />
-                    </div>
-
-                    <div className="ge-field">
-                      <label className="ge-label">Employees</label>
-                      <input
-                        className="ge-input"
-                        placeholder="e.g. 1,200"
-                        value={form.employees}
-                        onChange={(e) =>
-                          handleFormChange("employees", e.target.value)
-                        }
-                      />
-                    </div>
-
-                    <div className="ge-field">
-                      <label className="ge-label">Status</label>
-                      <select
-                        className="ge-select"
-                        value={form.status}
-                        onChange={(e) =>
-                          handleFormChange("status", e.target.value)
-                        }
-                      >
-                        {STATUSES.map((s) => (
-                          <option key={s} value={s}>
-                            {s.charAt(0).toUpperCase() + s.slice(1)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="ge-field">
-                      <label className="ge-label">
-                        Compliance Score ({form.score}%)
-                      </label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={form.score}
-                        onChange={(e) =>
-                          handleFormChange("score", e.target.value)
-                        }
-                        style={{
-                          width: "100%",
-                          accentColor: "#355872",
-                          marginTop: 6,
-                        }}
-                      />
-                    </div>
-
                     <div className="ge-field span2">
-                      <label className="ge-label">Notes</label>
-                      <textarea
-                        className="ge-textarea"
-                        placeholder="Optional notes…"
-                        value={form.notes}
+                      <label className="ge-label">Address</label>
+                      <input
+                        className="ge-input"
+                        placeholder="City, Country"
+                        value={form.address}
                         onChange={(e) =>
-                          handleFormChange("notes", e.target.value)
+                          handleFormChange("address", e.target.value)
                         }
                       />
                     </div>
+                    <div className="ge-field">
+                      <label className="ge-label">Admin Full Name</label>
+                      <input
+                        className="ge-input"
+                        placeholder="Full name"
+                        value={form.adminFullName}
+                        onChange={(e) =>
+                          handleFormChange("adminFullName", e.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="ge-field">
+                      <label className="ge-label">Admin Email</label>
+                      <input
+                        className="ge-input"
+                        type="email"
+                        placeholder="admin@entity.gov"
+                        value={form.adminEmail}
+                        onChange={(e) =>
+                          handleFormChange("adminEmail", e.target.value)
+                        }
+                      />
+                    </div>
+                    {modal.mode === "create" && (
+                      <div className="ge-field span2">
+                        <label className="ge-label">Password</label>
+                        <input
+                          className="ge-input"
+                          type="password"
+                          placeholder="Set initial password"
+                          value={form.password}
+                          onChange={(e) =>
+                            handleFormChange("password", e.target.value)
+                          }
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -780,10 +636,12 @@ export default function GovEntities() {
                     onClick={
                       modal.mode === "create" ? handleCreate : handleUpdate
                     }
-                    disabled={!form.name.trim()}
+                    disabled={!form.entityName.trim()}
                     style={{
-                      opacity: form.name.trim() ? 1 : 0.5,
-                      cursor: form.name.trim() ? "pointer" : "not-allowed",
+                      opacity: form.entityName.trim() ? 1 : 0.5,
+                      cursor: form.entityName.trim()
+                        ? "pointer"
+                        : "not-allowed",
                     }}
                   >
                     <Icon name="save" />
