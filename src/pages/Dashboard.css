@@ -1,0 +1,484 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@600;700;800&display=swap");
+
+/* ─── Variables (scoped) ─────────────────────────────────────────────────── */
+.dashboard-page {
+  --cream: #f7f8f0;
+  --sky: #9cd5ff;
+  --steel: #7aaace;
+  --navy: #355872;
+  --navy-dark: #234055;
+  --navy-light: #4a7496;
+  --white: #ffffff;
+  --border: rgba(53, 88, 114, 0.12);
+  --text-muted: rgba(53, 88, 114, 0.45);
+
+  --font-display: "Syne", sans-serif;
+  --font-body: "DM Sans", sans-serif;
+
+  --sidebar-w: 240px;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --sidebar-transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow-card: 0 2px 12px rgba(53, 88, 114, 0.08);
+  --shadow-hover: 0 6px 24px rgba(53, 88, 114, 0.14);
+}
+
+/* ─── Root layout ────────────────────────────────────────────────────────── */
+.dashboard-page {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  font-family: var(--font-body);
+  background: var(--cream);
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════════════════════════════════════════ */
+.db-sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  height: 100%;
+  background: var(--navy);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  z-index: 10;
+  transition:
+    width var(--sidebar-transition),
+    min-width var(--sidebar-transition);
+}
+
+/* collapsed state */
+.db-sidebar.collapsed {
+  width: 0;
+  min-width: 0;
+}
+
+/* grid texture */
+.db-sidebar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(156, 213, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(156, 213, 255, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+}
+
+/* glow blob */
+.db-sidebar::after {
+  content: "";
+  position: absolute;
+  bottom: -80px;
+  right: -80px;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(156, 213, 255, 0.1) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+/* ── Logo ── */
+.db-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 20px 20px;
+  z-index: 1;
+  border-bottom: 1px solid rgba(156, 213, 255, 0.1);
+  margin-bottom: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.db-logo-icon {
+  width: 34px;
+  height: 34px;
+  background: var(--sky);
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.db-logo-icon svg {
+  width: 18px;
+  height: 18px;
+  fill: var(--navy);
+}
+
+.db-logo-name {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--cream);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+/* ── Nav ── */
+.db-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 12px 16px;
+  z-index: 1;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 213, 255, 0.15) transparent;
+}
+
+.db-nav::-webkit-scrollbar {
+  width: 4px;
+}
+.db-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.db-nav::-webkit-scrollbar-thumb {
+  background: rgba(156, 213, 255, 0.15);
+  border-radius: 4px;
+}
+
+.db-nav-section {
+  margin-bottom: 4px;
+}
+
+.db-nav-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(247, 248, 240, 0.3);
+  padding: 12px 8px 6px;
+  white-space: nowrap;
+}
+
+.db-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition:
+    background var(--transition),
+    color var(--transition);
+  color: rgba(247, 248, 240, 0.6);
+  font-size: 0.875rem;
+  font-weight: 400;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  position: relative;
+  white-space: nowrap;
+}
+
+.db-nav-item svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+  transition: stroke var(--transition);
+}
+
+.db-nav-item:hover {
+  background: rgba(156, 213, 255, 0.08);
+  color: var(--cream);
+}
+
+.db-nav-item.active {
+  background: rgba(156, 213, 255, 0.15);
+  color: var(--sky);
+  font-weight: 500;
+}
+
+.db-nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--sky);
+  border-radius: 0 3px 3px 0;
+}
+
+.db-nav-badge {
+  margin-left: auto;
+  background: var(--sky);
+  color: var(--navy);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 20px;
+  line-height: 1.6;
+}
+
+/* ── Sidebar footer ── */
+.db-sidebar-footer {
+  z-index: 1;
+  padding: 14px 12px;
+  border-top: 1px solid rgba(156, 213, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.db-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--steel);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--white);
+}
+
+.db-user-name {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--cream);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.db-user-role {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MAIN CONTENT
+═══════════════════════════════════════════════════════════════════════════ */
+.db-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* ── Topbar ── */
+.db-topbar {
+  height: 60px;
+  min-height: 60px;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  gap: 16px;
+}
+
+.db-topbar-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--navy);
+  letter-spacing: -0.02em;
+  flex: 1;
+}
+
+.db-topbar-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--cream);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 7px 12px;
+  width: 220px;
+}
+
+.db-topbar-search svg {
+  width: 15px;
+  height: 15px;
+  stroke: var(--steel);
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  flex-shrink: 0;
+}
+
+.db-topbar-search input {
+  border: none;
+  background: none;
+  outline: none;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--navy);
+  width: 100%;
+}
+
+.db-topbar-search input::placeholder {
+  color: var(--text-muted);
+}
+
+.db-topbar-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition:
+    background var(--transition),
+    border-color var(--transition);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.db-topbar-btn svg {
+  width: 17px;
+  height: 17px;
+  stroke: var(--navy-light);
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.db-topbar-btn:hover {
+  background: var(--cream);
+  border-color: var(--steel);
+}
+
+/* ── Hamburger button (always visible in topbar) ── */
+.db-hamburger {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--white);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background var(--transition),
+    border-color var(--transition);
+  padding: 0;
+}
+
+.db-hamburger:hover {
+  background: var(--cream);
+  border-color: var(--steel);
+}
+
+.db-hamburger-bar {
+  display: block;
+  width: 16px;
+  height: 1.8px;
+  background: var(--navy-light);
+  border-radius: 99px;
+  transition:
+    transform var(--sidebar-transition),
+    opacity var(--sidebar-transition),
+    width var(--sidebar-transition);
+  transform-origin: center;
+}
+
+/* animate bars into X when open */
+.db-hamburger.open .db-hamburger-bar:nth-child(1) {
+  transform: translateY(6.8px) rotate(45deg);
+}
+.db-hamburger.open .db-hamburger-bar:nth-child(2) {
+  opacity: 0;
+  width: 0;
+}
+.db-hamburger.open .db-hamburger-bar:nth-child(3) {
+  transform: translateY(-6.8px) rotate(-45deg);
+}
+
+.db-notif-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--sky);
+  border: 1.5px solid var(--white);
+}
+
+/* ── Content area ── */
+.db-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 28px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(53, 88, 114, 0.15) transparent;
+}
+
+.db-content::-webkit-scrollbar {
+  width: 5px;
+}
+.db-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.db-content::-webkit-scrollbar-thumb {
+  background: rgba(53, 88, 114, 0.15);
+  border-radius: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════════════════════════════════════════ */
+@keyframes db-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.db-sidebar {
+  animation: db-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.db-topbar {
+  animation: db-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .db-content {
+    padding: 16px;
+  }
+}

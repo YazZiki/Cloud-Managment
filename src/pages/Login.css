@@ -1,0 +1,548 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@600;700;800&display=swap");
+
+/* ─── CSS Variables (scoped) ─────────────────────────────────────────────── */
+.login-page {
+  --cream: #f7f8f0;
+  --sky: #9cd5ff;
+  --steel: #7aaace;
+  --navy: #355872;
+  --navy-dark: #234055;
+  --navy-light: #4a7496;
+  --white: #ffffff;
+  --error: #c0392b;
+
+  --font-display: "Syne", sans-serif;
+  --font-body: "DM Sans", sans-serif;
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+
+  --shadow-card:
+    0 24px 64px rgba(53, 88, 114, 0.18), 0 4px 16px rgba(53, 88, 114, 0.08);
+  --shadow-btn: 0 4px 16px rgba(53, 88, 114, 0.35);
+
+  --transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─── Layout ─────────────────────────────────────────────────────────────── */
+.login-page {
+  width: 100%;
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  font-family: var(--font-body);
+  background: var(--cream);
+  overflow: hidden;
+}
+
+/* ─── Left Panel ─────────────────────────────────────────────────────────── */
+.login-page .lp-panel {
+  background: var(--navy);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 48px 52px;
+  overflow: hidden;
+}
+
+/* Decorative blobs */
+.login-page .lp-panel::before {
+  content: "";
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(156, 213, 255, 0.18) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.login-page .lp-panel::after {
+  content: "";
+  position: absolute;
+  bottom: -60px;
+  left: -60px;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(122, 170, 206, 0.22) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.login-page .lp-panel-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(156, 213, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(156, 213, 255, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+}
+
+.login-page .lp-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 1;
+}
+
+.login-page .lp-logo-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--sky);
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+}
+
+.login-page .lp-logo-icon svg {
+  width: 22px;
+  height: 22px;
+  fill: var(--navy);
+}
+
+.login-page .lp-logo-name {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--cream);
+  letter-spacing: -0.02em;
+}
+
+.login-page .lp-hero {
+  z-index: 1;
+}
+
+.login-page .lp-tagline {
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 3vw, 2.6rem);
+  font-weight: 800;
+  color: var(--cream);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  margin-bottom: 18px;
+}
+
+.login-page .lp-tagline span {
+  color: var(--sky);
+}
+
+.login-page .lp-subtitle {
+  font-size: 0.95rem;
+  font-weight: 300;
+  color: rgba(247, 248, 240, 0.65);
+  line-height: 1.65;
+  max-width: 340px;
+}
+
+.login-page .lp-stats {
+  z-index: 1;
+  display: flex;
+  gap: 32px;
+}
+
+.login-page .lp-stat-value {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--sky);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.login-page .lp-stat-label {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: rgba(247, 248, 240, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ─── Right Panel (Form) ─────────────────────────────────────────────────── */
+.login-page .lp-form-side {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 52px;
+  background: var(--cream);
+}
+
+.login-page .lp-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+.login-page .lp-card-header {
+  margin-bottom: 40px;
+}
+
+.login-page .lp-welcome {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--navy);
+  letter-spacing: -0.03em;
+  margin-bottom: 6px;
+}
+
+.login-page .lp-welcome-sub {
+  font-size: 0.9rem;
+  color: var(--navy-light);
+  font-weight: 400;
+}
+
+/* ─── Form Elements ──────────────────────────────────────────────────────── */
+.login-page .lp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.login-page .lp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.login-page .lp-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--navy);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.login-page .lp-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.login-page .lp-input-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--steel);
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  transition: color var(--transition);
+}
+
+.login-page .lp-input-icon svg {
+  width: 17px;
+  height: 17px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.login-page .lp-input {
+  width: 100%;
+  padding: 13px 14px 13px 42px;
+  border: 1.5px solid rgba(53, 88, 114, 0.18);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  color: var(--navy);
+  outline: none;
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
+  box-sizing: border-box;
+}
+
+.login-page .lp-input::placeholder {
+  color: rgba(53, 88, 114, 0.35);
+}
+
+.login-page .lp-input:focus {
+  border-color: var(--steel);
+  box-shadow: 0 0 0 3px rgba(122, 170, 206, 0.2);
+}
+
+.login-page .lp-input-wrap:focus-within .lp-input-icon {
+  color: var(--navy);
+}
+
+/* Password toggle */
+.login-page .lp-eye-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--steel);
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color var(--transition);
+}
+
+.login-page .lp-eye-btn:hover {
+  color: var(--navy);
+}
+
+.login-page .lp-eye-btn svg {
+  width: 17px;
+  height: 17px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ─── Options Row ────────────────────────────────────────────────────────── */
+.login-page .lp-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: -4px;
+}
+
+.login-page .lp-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--navy-light);
+  cursor: pointer;
+  user-select: none;
+}
+
+.login-page .lp-checkbox {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1.5px solid rgba(53, 88, 114, 0.3);
+  accent-color: var(--navy);
+  cursor: pointer;
+}
+
+.login-page .lp-forgot {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--steel);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+.login-page .lp-forgot:hover {
+  color: var(--navy);
+}
+
+/* ─── Submit Button ──────────────────────────────────────────────────────── */
+.login-page .lp-btn {
+  margin-top: 4px;
+  padding: 14px;
+  background: var(--navy);
+  color: var(--cream);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    background var(--transition),
+    box-shadow var(--transition),
+    transform var(--transition);
+  box-shadow: var(--shadow-btn);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.login-page .lp-btn:hover {
+  background: var(--navy-dark);
+  box-shadow: 0 6px 22px rgba(53, 88, 114, 0.45);
+  transform: translateY(-1px);
+}
+
+.login-page .lp-btn:active {
+  transform: translateY(0);
+}
+
+.login-page .lp-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform var(--transition);
+}
+
+.login-page .lp-btn:hover svg {
+  transform: translateX(3px);
+}
+
+/* Loading state */
+.login-page .lp-btn.loading {
+  opacity: 0.8;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.login-page .lp-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(247, 248, 240, 0.3);
+  border-top-color: var(--cream);
+  border-radius: 50%;
+  animation: lp-spin 0.7s linear infinite;
+}
+
+@keyframes lp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ─── Error message ──────────────────────────────────────────────────────── */
+.login-page .lp-error {
+  font-size: 0.82rem;
+  color: var(--error);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: -8px;
+}
+
+/* ─── Divider ────────────────────────────────────────────────────────────── */
+.login-page .lp-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: rgba(53, 88, 114, 0.3);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.login-page .lp-divider::before,
+.login-page .lp-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(53, 88, 114, 0.12);
+}
+
+/* ─── SSO Button ─────────────────────────────────────────────────────────── */
+.login-page .lp-sso-btn {
+  padding: 12px;
+  background: var(--white);
+  color: var(--navy);
+  border: 1.5px solid rgba(53, 88, 114, 0.18);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.login-page .lp-sso-btn:hover {
+  border-color: var(--steel);
+  box-shadow: 0 2px 12px rgba(53, 88, 114, 0.1);
+}
+
+.login-page .lp-sso-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ─── Footer ─────────────────────────────────────────────────────────────── */
+.login-page .lp-footer {
+  margin-top: 32px;
+  text-align: center;
+  font-size: 0.82rem;
+  color: rgba(53, 88, 114, 0.5);
+}
+
+.login-page .lp-footer a {
+  color: var(--steel);
+  font-weight: 500;
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+.login-page .lp-footer a:hover {
+  color: var(--navy);
+}
+
+/* ─── Entrance animations ────────────────────────────────────────────────── */
+.login-page .lp-panel {
+  animation: lp-slide-in-left 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.login-page .lp-card {
+  animation: lp-slide-in-right 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
+@keyframes lp-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes lp-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .login-page {
+    grid-template-columns: 1fr;
+  }
+
+  .login-page .lp-panel {
+    display: none;
+  }
+
+  .login-page .lp-form-side {
+    padding: 40px 24px;
+    align-items: flex-start;
+    padding-top: 60px;
+  }
+}
