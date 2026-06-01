@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
 import "./Dashboard.css";
 
 /* ─── Nav items ──────────────────────────────────────────────────────────── */
@@ -39,6 +40,13 @@ const NAV_ITEMS = [
 /* ─── SVG icon map ───────────────────────────────────────────────────────── */
 function Icon({ name, ...props }) {
   const icons = {
+    logout: (
+      <svg viewBox="0 0 24 24" {...props}>
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+        <polyline points="16 17 21 12 16 7" />
+        <line x1="21" y1="12" x2="9" y2="12" />
+      </svg>
+    ),
     building: (
       <svg viewBox="0 0 24 24" {...props}>
         <path d="M3 21h18M3 7l9-4 9 4M4 7v14M20 7v14M8 21v-4a2 2 0 0 1 4 0v4M9 11h.01M15 11h.01M9 7h.01M15 7h.01" />
@@ -140,6 +148,7 @@ function Icon({ name, ...props }) {
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
+  const { logout } = useAuth();
   const PAGE_TITLES = {
     "/dashboard/entities": "Government Entities",
     "/dashboard/users": "Users",
@@ -197,17 +206,26 @@ export default function Dashboard() {
             <div className="db-user-role">Super Admin</div>
           </div>
           <button
+            onClick={logout}
+            title="Logout"
             style={{
               background: "none",
               border: "none",
               cursor: "pointer",
-              color: "rgba(247,248,240,0.4)",
+              color: "rgba(247,248,240,0.5)",
               display: "grid",
               placeItems: "center",
+              padding: 4,
+              borderRadius: 6,
+              transition: "color 0.2s",
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#f08080")}
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.color = "rgba(247,248,240,0.5)")
+            }
           >
             <Icon
-              name="settings"
+              name="logout"
               style={{
                 width: 15,
                 height: 15,
