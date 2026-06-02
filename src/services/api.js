@@ -189,3 +189,23 @@ export function getReadinessResults() {
 export function getReadinessResultByEntity(entityId) {
   return request(`/readiness/results/${entityId}`, { method: "GET" });
 }
+
+export function getPlatformSummary() {
+  return request("/reports/platform-summary", { method: "GET" });
+}
+
+export function getEntityReport(entityId) {
+  return request(`/reports/entity/${entityId}`, { method: "GET" });
+}
+
+export function getReadinessReport() {
+  return request("/reports/readiness", { method: "GET" });
+}
+
+export function getMaturityReport() {
+  return request("/reports/maturity", { method: "GET" });
+}
+
+export function getVulnerabilitiesReport() {
+  return request("/reports/vulnerabilities", { method: "GET" });
+}
