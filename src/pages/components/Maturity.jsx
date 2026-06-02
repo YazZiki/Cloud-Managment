@@ -25,82 +25,69 @@ const LEVEL_LABELS = {
 
 /* ─── Maturity questions (hardcoded with predefined keys) ────────────────── */
 const MATURITY_QUESTIONS = [
+  // المحور الأول: الحوكمة والسياسات الأمنية
   {
-    key: "maturity_strategy_q1",
-    text: "Does the organization have a defined cloud adoption strategy aligned with business objectives?",
+    key: "governance_q1",
+    text: "هل توجد سياسة رسمية لأمن الحوسبة السحابية معتمدة على مستوى الجهة؟",
   },
   {
-    key: "maturity_strategy_q2",
-    text: "Is there a formal governance framework for cloud services management?",
+    key: "governance_q2",
+    text: "هل نموذج تقاسم المسؤوليات مع مزود الخدمة السحابية موثق وواضح؟",
   },
+  { key: "governance_q3", text: "هل يتم تحديث سياسات أمن السحابة بشكل دوري؟" },
   {
-    key: "maturity_strategy_q3",
-    text: "Are cloud policies reviewed and updated on a regular basis?",
+    key: "governance_q4",
+    text: "هل توجد جهة حوكمة مسؤولة عن أمن السحابة الحكومية؟",
   },
+  // المحور الثاني: إدارة مخاطر أمن السحابة
+  { key: "risk_q1", text: "هل يتم إجراء تقييم مخاطر دوري لبيئة السحابة؟" },
+  { key: "risk_q2", text: "هل تشمل عملية التقييم مخاطر الشبكة السحابية؟" },
+  { key: "risk_q3", text: "هل يتم ربط نتائج المخاطر بضوابط أمنية محددة؟" },
+  { key: "risk_q4", text: "هل توجد خطة معالجة للمخاطر الحرجة؟" },
+  // المحور الثالث: أمن الشبكة السحابية
   {
-    key: "maturity_process_q1",
-    text: "Are cloud deployment processes standardized and documented?",
+    key: "network_q1",
+    text: "هل يتم تطبيق التقسيم الشبكي داخل البيئة السحابية؟",
   },
+  { key: "network_q2", text: "هل توجد حماية لحركة المرور الداخلية؟" },
+  { key: "network_q3", text: "هل يتم تطبيق ضوابط Zero Trust؟" },
+  { key: "network_q4", text: "هل تتوفر حماية من هجمات DDOS؟" },
+  // المحور الرابع: إدارة الهوية والتحكم بالوصول
+  { key: "iam_q1", text: "هل يتم استخدام المصادقة متعددة العوامل MFA؟" },
   {
-    key: "maturity_process_q2",
-    text: "Is there a formal change management process for cloud environments?",
+    key: "iam_q2",
+    text: "هل يتم تطبيق مبدأ الصلاحيات الأقل Least Privileges؟",
   },
+  { key: "iam_q3", text: "هل إدارة الهويات مركزية؟" },
+  { key: "iam_q4", text: "هل يتم إلغاء الصلاحيات فور انتهاء الحاجة؟" },
+  // المحور الخامس: حماية البيانات أثناء النقل
+  { key: "dataprotection_q1", text: "هل جميع الاتصالات السحابية مشفرة؟" },
+  { key: "dataprotection_q2", text: "هل يتم استخدام بروتوكولات تشفير معتمدة؟" },
+  { key: "dataprotection_q3", text: "هل تتم مراقبة الاتصالات الشبكية؟" },
+  // المحور السادس: المراقبة والاستجابة للحوادث
+  { key: "monitoring_q1", text: "هل توجد مراقبة مستمرة لحركة الشبكة؟" },
+  { key: "monitoring_q2", text: "هل يتم تحليل السجلات مركزياً؟" },
+  { key: "monitoring_q3", text: "هل توجد خطة استجابة لحوادث الشبكة؟" },
+  { key: "monitoring_q4", text: "هل يتم اختبار خطة الاستجابة دورياً؟" },
+  // المحور السابع: الاستمرارية والتعافي
   {
-    key: "maturity_process_q3",
-    text: "Are incident response procedures defined and tested for cloud systems?",
+    key: "continuity_q1",
+    text: "هل توجد خطة استمرارية أعمال للشبكة السحابية؟",
   },
-  {
-    key: "maturity_tech_q1",
-    text: "Is infrastructure-as-code (IaC) used for cloud resource provisioning?",
-  },
-  {
-    key: "maturity_tech_q2",
-    text: "Are automated monitoring and alerting systems in place for cloud workloads?",
-  },
-  {
-    key: "maturity_tech_q3",
-    text: "Is there a formal CI/CD pipeline for cloud application deployments?",
-  },
-  {
-    key: "maturity_security_q1",
-    text: "Are identity and access management (IAM) controls enforced across all cloud services?",
-  },
-  {
-    key: "maturity_security_q2",
-    text: "Is data encrypted at rest and in transit across all cloud environments?",
-  },
-  {
-    key: "maturity_security_q3",
-    text: "Are regular security assessments and penetration tests conducted on cloud systems?",
-  },
-  {
-    key: "maturity_people_q1",
-    text: "Does the team have certified cloud professionals managing the environment?",
-  },
-  {
-    key: "maturity_people_q2",
-    text: "Are training and upskilling programs in place for cloud technologies?",
-  },
-  {
-    key: "maturity_people_q3",
-    text: "Is there a defined cloud center of excellence (CCoE) or cloud team?",
-  },
-  {
-    key: "maturity_cost_q1",
-    text: "Are cloud costs monitored and optimized on an ongoing basis?",
-  },
-  {
-    key: "maturity_cost_q2",
-    text: "Is FinOps or cost management tooling in use for cloud spend visibility?",
-  },
+  { key: "continuity_q2", text: "هل يتم اختبار خطط التعافي؟" },
+  { key: "continuity_q3", text: "هل تتوفر بنية توافر عالٍ؟" },
+  // المحور الثامن: الوعي وبناء القدرات
+  { key: "awareness_q1", text: "هل يتم تدريب الموظفين على أمن السحابة؟" },
+  { key: "awareness_q2", text: "هل توجد برامج توعية بالتهديدات؟" },
+  { key: "awareness_q3", text: "هل يتم تقييم مستوى الوعي الأمني؟" },
 ];
 
 const LIKERT = [
-  { value: 1, label: "Initial" },
-  { value: 2, label: "Managed" },
-  { value: 3, label: "Defined" },
-  { value: 4, label: "Quantified" },
-  { value: 5, label: "Optimized" },
+  { value: 1, label: "غير مطبق" },
+  { value: 2, label: "مطبق جزئياً" },
+  { value: 3, label: "مطبق" },
+  { value: 4, label: "مطبق ومُدار" },
+  { value: 5, label: "مطبق ومُحسَّن" },
 ];
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
