@@ -1,122 +1,42 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
+import {
+  getAllVulnerabilities,
+  getMyVulnerabilities,
+  createVulnerability,
+  updateVulnerability,
+  updateVulnerabilityStatus,
+  deleteVulnerability,
+} from "../../services/api.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 import "./Vulnerabilities.css";
 
-/* ─── Mock data ──────────────────────────────────────────────────────────── */
-const TEAM = [
-  { id: 1, name: "Sara Al-Harbi", initials: "SA", color: "#7aaace" },
-  { id: 2, name: "Khalid Nasser", initials: "KN", color: "#355872" },
-  { id: 3, name: "Lina Mahmoud", initials: "LM", color: "#9cd5ff" },
-  { id: 4, name: "Omar Saleh", initials: "OS", color: "#4a7496" },
-];
-
-const INITIAL_VULNS = [
-  {
-    id: "CVE-2024-1182",
-    title: "Remote Code Execution",
-    affectedSystem: "Node Cluster 3",
-    severity: "critical",
-    status: "open",
-    cvss: 9.8,
-    assigneeId: 1,
-    description:
-      "A critical RCE vulnerability in the runtime allows unauthenticated remote code execution via crafted HTTP requests.",
-    discoveredDate: "2024-05-10",
-    dueDate: "2024-05-17",
-  },
-  {
-    id: "CVE-2024-0923",
-    title: "SQL Injection",
-    affectedSystem: "Auth Service",
-    severity: "high",
-    status: "in-progress",
-    cvss: 8.1,
-    assigneeId: 2,
-    description:
-      "Unsanitized input in the login endpoint allows attackers to manipulate SQL queries and extract sensitive data.",
-    discoveredDate: "2024-04-28",
-    dueDate: "2024-05-20",
-  },
-  {
-    id: "CVE-2024-0741",
-    title: "Cross-Site Scripting (XSS)",
-    affectedSystem: "Portal UI",
-    severity: "medium",
-    status: "in-progress",
-    cvss: 6.3,
-    assigneeId: 3,
-    description:
-      "Reflected XSS in the search parameter allows attackers to inject arbitrary JavaScript into the victim's browser.",
-    discoveredDate: "2024-04-15",
-    dueDate: "2024-05-30",
-  },
-  {
-    id: "CVE-2024-0512",
-    title: "Insecure Direct Object Reference",
-    affectedSystem: "Document API",
-    severity: "medium",
-    status: "open",
-    cvss: 5.9,
-    assigneeId: null,
-    description:
-      "The API exposes internal object references allowing unauthorized access to other users' documents.",
-    discoveredDate: "2024-04-10",
-    dueDate: "2024-06-01",
-  },
-  {
-    id: "CVE-2024-0388",
-    title: "Outdated TLS Configuration",
-    affectedSystem: "Load Balancer",
-    severity: "low",
-    status: "resolved",
-    cvss: 3.1,
-    assigneeId: 4,
-    description:
-      "The load balancer still supports TLS 1.0 and 1.1 which are deprecated and vulnerable to known attacks.",
-    discoveredDate: "2024-03-20",
-    dueDate: "2024-04-30",
-  },
-  {
-    id: "CVE-2024-0271",
-    title: "Privilege Escalation",
-    affectedSystem: "IAM Module",
-    severity: "high",
-    status: "accepted",
-    cvss: 7.5,
-    assigneeId: 2,
-    description:
-      "A misconfiguration in the IAM module allows low-privileged users to escalate their permissions to admin level.",
-    discoveredDate: "2024-03-05",
-    dueDate: "2024-04-15",
-  },
-];
-
+/* ─── Enum maps ──────────────────────────────────────────────────────────── */
+const SEVERITY_MAP = { 0: "low", 1: "medium", 2: "high", 3: "critical" };
+const SEVERITY_TO_NUM = { low: 0, medium: 1, high: 2, critical: 3 };
+const STATUS_MAP = { 0: "open", 1: "in-progress", 2: "resolved", 3: "closed" };
+const STATUS_TO_NUM = { open: 0, "in-progress": 1, resolved: 2, closed: 3 };
 const SEVERITY_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
-function initials(name) {
-  return name
-    ? name
-        .split(" ")
-        .map((w) => w[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase()
-    : "?";
+function formatDate(iso) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function normalize(v) {
+  return {
+    ...v,
+    severity: SEVERITY_MAP[v.severity] ?? "low",
+    status: STATUS_MAP[v.status] ?? "open",
+  };
 }
 
 function blankVuln() {
-  return {
-    id: "",
-    title: "",
-    affectedSystem: "",
-    severity: "medium",
-    status: "open",
-    cvss: "",
-    assigneeId: null,
-    description: "",
-    discoveredDate: "",
-    dueDate: "",
-  };
+  return { title: "", description: "", severity: "medium" };
 }
 
 /* ─── Icon component ─────────────────────────────────────────────────────── */
@@ -146,14 +66,6 @@ function Icon({ name }) {
         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
       </svg>
     ),
-    assign: (
-      <svg viewBox="0 0 24 24">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
     trash: (
       <svg viewBox="0 0 24 24">
         <polyline points="3 6 5 6 21 6" />
@@ -174,13 +86,6 @@ function Icon({ name }) {
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
       </svg>
     ),
-    alert: (
-      <svg viewBox="0 0 24 24">
-        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-        <line x1="12" y1="9" x2="12" y2="13" />
-        <line x1="12" y1="17" x2="12.01" y2="17" />
-      </svg>
-    ),
     save: (
       <svg viewBox="0 0 24 24">
         <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
@@ -188,10 +93,11 @@ function Icon({ name }) {
         <polyline points="7 3 7 8 15 8" />
       </svg>
     ),
-    user: (
+    alert: (
       <svg viewBox="0 0 24 24">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-        <circle cx="12" cy="7" r="4" />
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
       </svg>
     ),
   };
@@ -213,13 +119,43 @@ function Icon({ name }) {
   ) : null;
 }
 
-/* ─── Main component ─────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   MAIN COMPONENT
+═══════════════════════════════════════════════════════════════════════════ */
 export default function Vulnerabilities() {
-  const [vulns, setVulns] = useState(INITIAL_VULNS);
+  const { role } = useAuth();
+  const isAdmin = role === "PlatformAdmin";
+  const isEntityAdmin = role === "EntityAdmin";
+
+  const [vulns, setVulns] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [filterSeverity, setFilterSeverity] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
-  const [modal, setModal] = useState(null); // null | { mode, data }
+  const [modal, setModal] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  /* ── Load — admin gets all, entity admin gets only theirs ── */
+  useEffect(() => {
+    loadVulns();
+  }, []);
+
+  const loadVulns = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = isEntityAdmin
+        ? await getMyVulnerabilities()
+        : await getAllVulnerabilities();
+      setVulns((Array.isArray(data) ? data : []).map(normalize));
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load vulnerabilities. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   /* ── Filtered list ── */
   const filtered = useMemo(() => {
@@ -227,9 +163,10 @@ export default function Vulnerabilities() {
       .filter((v) => {
         const q = search.toLowerCase();
         return (
-          v.id.toLowerCase().includes(q) ||
-          v.title.toLowerCase().includes(q) ||
-          v.affectedSystem.toLowerCase().includes(q)
+          String(v.id).includes(q) ||
+          (v.title || "").toLowerCase().includes(q) ||
+          (v.governmentEntityName || "").toLowerCase().includes(q) ||
+          (v.description || "").toLowerCase().includes(q)
         );
       })
       .filter((v) => filterSeverity === "all" || v.severity === filterSeverity)
@@ -249,48 +186,132 @@ export default function Vulnerabilities() {
   );
 
   /* ── Modal helpers ── */
-  const openView = (v) => setModal({ mode: "view", data: { ...v } });
+  const openView = (v) =>
+    setModal({ mode: "view", data: { ...v }, resolutionNotes: "" });
   const openEdit = (v) => setModal({ mode: "edit", data: { ...v } });
   const openCreate = () => setModal({ mode: "create", data: blankVuln() });
-  const openAssign = (v) => setModal({ mode: "assign", data: { ...v } });
   const openDelete = (v) => setModal({ mode: "delete", data: { ...v } });
   const closeModal = () => setModal(null);
+  const setField = (k, val) =>
+    setModal((p) => ({ ...p, data: { ...p.data, [k]: val } }));
 
-  /* ── CRUD operations ── */
-  const handleSave = () => {
+  /* ── Create ── */
+  const handleCreate = async () => {
     const d = modal.data;
-    if (!d.id || !d.title || !d.affectedSystem) return;
-    if (modal.mode === "create") {
-      setVulns((prev) => [d, ...prev]);
-    } else {
-      setVulns((prev) => prev.map((v) => (v.id === d.id ? d : v)));
+    if (!d.title) return;
+    setSaving(true);
+    try {
+      const created = await createVulnerability({
+        title: d.title,
+        description: d.description || "",
+        severity: SEVERITY_TO_NUM[d.severity] ?? 1,
+      });
+      setVulns((prev) => [normalize(created), ...prev]);
+      closeModal();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to create vulnerability.");
+    } finally {
+      setSaving(false);
     }
-    closeModal();
   };
 
-  const handleDelete = () => {
-    setVulns((prev) => prev.filter((v) => v.id !== modal.data.id));
-    closeModal();
+  /* ── Update (edit) ── */
+  const handleUpdate = async () => {
+    const d = modal.data;
+    if (!d.title) return;
+    setSaving(true);
+    try {
+      await updateVulnerability(d.id, {
+        title: d.title,
+        description: d.description || "",
+        severity: SEVERITY_TO_NUM[d.severity] ?? 0,
+      });
+      setVulns((prev) => prev.map((v) => (v.id === d.id ? { ...v, ...d } : v)));
+      closeModal();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update vulnerability.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleStatusChange = (status) => {
-    const updated = { ...modal.data, status };
-    setVulns((prev) => prev.map((v) => (v.id === updated.id ? updated : v)));
-    setModal((prev) => ({ ...prev, data: updated }));
+  /* ── Status change (admin only) ── */
+  const handleStatusChange = async (newStatus) => {
+    const d = modal.data;
+    setSaving(true);
+    try {
+      await updateVulnerabilityStatus(d.id, {
+        status: STATUS_TO_NUM[newStatus] ?? 0,
+        resolutionNotes: modal.resolutionNotes || "",
+      });
+      const updated = { ...d, status: newStatus };
+      setVulns((prev) => prev.map((v) => (v.id === d.id ? updated : v)));
+      setModal((p) => ({ ...p, data: updated }));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update status.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleAssignSave = () => {
-    setVulns((prev) =>
-      prev.map((v) => (v.id === modal.data.id ? modal.data : v)),
+  /* ── Delete (admin only) ── */
+  const handleDelete = async () => {
+    setSaving(true);
+    try {
+      await deleteVulnerability(modal.data.id);
+      setVulns((prev) => prev.filter((v) => v.id !== modal.data.id));
+      closeModal();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete vulnerability.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /* ── Loading / error states ── */
+  if (loading) {
+    return (
+      <div
+        className="vl-wrap"
+        style={{ alignItems: "center", justifyContent: "center" }}
+      >
+        <div style={{ color: "rgba(53,88,114,0.5)", fontSize: "0.9rem" }}>
+          Loading vulnerabilities…
+        </div>
+      </div>
     );
-    closeModal();
-  };
+  }
 
-  const setField = (key, val) =>
-    setModal((prev) => ({ ...prev, data: { ...prev.data, [key]: val } }));
-
-  /* ── Assignee lookup ── */
-  const getAssignee = (id) => TEAM.find((t) => t.id === id) || null;
+  if (error) {
+    return (
+      <div
+        className="vl-wrap"
+        style={{ alignItems: "center", justifyContent: "center" }}
+      >
+        <div style={{ color: "#c0392b", fontSize: "0.9rem" }}>{error}</div>
+        <button
+          onClick={loadVulns}
+          style={{
+            marginTop: 12,
+            padding: "8px 18px",
+            background: "#355872",
+            color: "#f7f8f0",
+            border: "none",
+            borderRadius: 8,
+            cursor: "pointer",
+            fontFamily: "Syne, sans-serif",
+            fontWeight: 700,
+          }}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   /* ─────────────────────────────────────────────────────────────────────── */
   return (
@@ -302,7 +323,7 @@ export default function Vulnerabilities() {
             <Icon name="search" />
           </div>
           <input
-            placeholder="Search by CVE ID, title, system…"
+            placeholder="Search by ID, title, entity…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -329,15 +350,18 @@ export default function Vulnerabilities() {
           <option value="open">Open</option>
           <option value="in-progress">In Progress</option>
           <option value="resolved">Resolved</option>
-          <option value="accepted">Accepted</option>
+          <option value="closed">Closed</option>
         </select>
 
-        <button className="vl-btn-primary" onClick={openCreate}>
-          <div style={{ width: 15, height: 15 }}>
-            <Icon name="plus" />
-          </div>
-          New Vulnerability
-        </button>
+        {/* Only EntityAdmin can create vulnerabilities */}
+        {isEntityAdmin && (
+          <button className="vl-btn-primary" onClick={openCreate}>
+            <div style={{ width: 15, height: 15 }}>
+              <Icon name="plus" />
+            </div>
+            New Vulnerability
+          </button>
+        )}
       </div>
 
       {/* ── Stats ── */}
@@ -368,113 +392,95 @@ export default function Vulnerabilities() {
           <table className="vl-table">
             <thead>
               <tr>
-                <th>CVE ID</th>
+                <th>#</th>
                 <th>Title</th>
-                <th>Affected System</th>
+                {isAdmin && <th>Entity</th>}
                 <th>Severity</th>
-                <th>CVSS</th>
                 <th>Status</th>
-                <th>Assignee</th>
-                <th>Due Date</th>
+                <th>Reported At</th>
+                <th>Resolution Notes</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={9}>
+                  <td colSpan={isAdmin ? 8 : 7}>
                     <div className="vl-empty">No vulnerabilities found.</div>
                   </td>
                 </tr>
               ) : (
-                filtered.map((v) => {
-                  const assignee = getAssignee(v.assigneeId);
-                  return (
-                    <tr key={v.id} onClick={() => openView(v)}>
+                filtered.map((v) => (
+                  <tr key={v.id} onClick={() => openView(v)}>
+                    <td>
+                      <span className="vl-vuln-id">#{v.id}</span>
+                    </td>
+                    <td>
+                      <div className="vl-vuln-title">{v.title}</div>
+                    </td>
+                    {isAdmin && (
                       <td>
-                        <span className="vl-vuln-id">{v.id}</span>
-                      </td>
-                      <td>
-                        <div className="vl-vuln-title">{v.title}</div>
-                      </td>
-                      <td>
-                        <span className="vl-vuln-sub">{v.affectedSystem}</span>
-                      </td>
-                      <td>
-                        <span className={`vl-severity ${v.severity}`}>
-                          {v.severity.charAt(0).toUpperCase() +
-                            v.severity.slice(1)}
+                        <span className="vl-vuln-sub">
+                          {v.governmentEntityName || "—"}
                         </span>
                       </td>
-                      <td style={{ fontWeight: 600 }}>{v.cvss}</td>
-                      <td>
-                        <span className={`vl-pill ${v.status}`}>
-                          {v.status
-                            .replace("-", " ")
-                            .replace(/\b\w/g, (c) => c.toUpperCase())}
-                        </span>
-                      </td>
-                      <td>
-                        {assignee ? (
-                          <div className="vl-assignee">
-                            <div
-                              className="vl-assignee-avatar"
-                              style={{ background: assignee.color }}
-                            >
-                              {assignee.initials}
-                            </div>
-                            <span style={{ fontSize: "0.8rem" }}>
-                              {assignee.name.split(" ")[0]}
-                            </span>
+                    )}
+                    <td>
+                      <span className={`vl-severity ${v.severity}`}>
+                        {v.severity.charAt(0).toUpperCase() +
+                          v.severity.slice(1)}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`vl-pill ${v.status}`}>
+                        {v.status
+                          .replace("-", " ")
+                          .replace(/\b\w/g, (c) => c.toUpperCase())}
+                      </span>
+                    </td>
+                    <td
+                      style={{
+                        fontSize: "0.8rem",
+                        color: "rgba(53,88,114,0.6)",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {formatDate(v.reportedAt)}
+                    </td>
+                    <td
+                      style={{
+                        fontSize: "0.8rem",
+                        color: "rgba(53,88,114,0.6)",
+                        maxWidth: 160,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {v.resolutionNotes || "—"}
+                    </td>
+                    <td onClick={(e) => e.stopPropagation()}>
+                      <div className="vl-row-actions">
+                        <button
+                          className="vl-icon-btn view"
+                          onClick={() => openView(v)}
+                          title="View"
+                        >
+                          <div style={{ width: 13, height: 13 }}>
+                            <Icon name="eye" />
                           </div>
-                        ) : (
-                          <span
-                            style={{
-                              fontSize: "0.78rem",
-                              color: "rgba(53,88,114,0.4)",
-                            }}
-                          >
-                            Unassigned
-                          </span>
-                        )}
-                      </td>
-                      <td
-                        style={{
-                          fontSize: "0.8rem",
-                          color: "rgba(53,88,114,0.6)",
-                        }}
-                      >
-                        {v.dueDate || "—"}
-                      </td>
-                      <td onClick={(e) => e.stopPropagation()}>
-                        <div className="vl-row-actions">
-                          <button
-                            className="vl-icon-btn view"
-                            onClick={() => openView(v)}
-                            title="View"
-                          >
-                            <div style={{ width: 13, height: 13 }}>
-                              <Icon name="eye" />
-                            </div>
-                          </button>
-                          <button
-                            className="vl-icon-btn edit"
-                            onClick={() => openEdit(v)}
-                            title="Edit"
-                          >
-                            <div style={{ width: 13, height: 13 }}>
-                              <Icon name="edit" />
-                            </div>
-                          </button>
-                          <button
-                            className="vl-icon-btn assign"
-                            onClick={() => openAssign(v)}
-                            title="Assign"
-                          >
-                            <div style={{ width: 13, height: 13 }}>
-                              <Icon name="assign" />
-                            </div>
-                          </button>
+                        </button>
+                        <button
+                          className="vl-icon-btn edit"
+                          onClick={() => openEdit(v)}
+                          title="Edit"
+                        >
+                          <div style={{ width: 13, height: 13 }}>
+                            <Icon name="edit" />
+                          </div>
+                        </button>
+                        {/* Only admin can delete */}
+                        {isAdmin && (
                           <button
                             className="vl-icon-btn delete"
                             onClick={() => openDelete(v)}
@@ -484,11 +490,11 @@ export default function Vulnerabilities() {
                               <Icon name="trash" />
                             </div>
                           </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
@@ -516,12 +522,12 @@ export default function Vulnerabilities() {
                     {modal.mode === "view" && modal.data.title}
                     {modal.mode === "edit" && "Edit Vulnerability"}
                     {modal.mode === "create" && "New Vulnerability"}
-                    {modal.mode === "assign" && "Assign Vulnerability"}
                     {modal.mode === "delete" && "Delete Vulnerability"}
                   </div>
                   {modal.mode === "view" && (
                     <div className="vl-modal-sub">
-                      {modal.data.id} · {modal.data.affectedSystem}
+                      #{modal.data.id} ·{" "}
+                      {modal.data.governmentEntityName || "—"}
                     </div>
                   )}
                 </div>
@@ -538,47 +544,83 @@ export default function Vulnerabilities() {
               {/* VIEW MODE */}
               {modal.mode === "view" && (
                 <>
-                  {/* Status change */}
-                  <div
-                    style={{
-                      marginBottom: 6,
-                      fontSize: "0.75rem",
-                      fontWeight: 700,
-                      letterSpacing: "0.07em",
-                      textTransform: "uppercase",
-                      color: "rgba(53,88,114,0.45)",
-                    }}
-                  >
-                    Change Status
-                  </div>
-                  <div className="vl-status-tabs">
-                    {["open", "in-progress", "resolved", "accepted"].map(
-                      (s) => (
-                        <button
-                          key={s}
-                          className={`vl-status-tab${modal.data.status === s ? ` ${s}` : ""}`}
-                          onClick={() => handleStatusChange(s)}
-                        >
-                          {s
-                            .replace("-", " ")
-                            .replace(/\b\w/g, (c) => c.toUpperCase())}
-                        </button>
-                      ),
-                    )}
-                  </div>
+                  {/* Status tabs — admin only */}
+                  {isAdmin && (
+                    <>
+                      <div
+                        style={{
+                          marginBottom: 6,
+                          fontSize: "0.75rem",
+                          fontWeight: 700,
+                          letterSpacing: "0.07em",
+                          textTransform: "uppercase",
+                          color: "rgba(53,88,114,0.45)",
+                        }}
+                      >
+                        Change Status
+                      </div>
+                      <div className="vl-status-tabs">
+                        {["open", "in-progress", "resolved", "closed"].map(
+                          (s) => (
+                            <button
+                              key={s}
+                              className={`vl-status-tab${modal.data.status === s ? ` ${s}` : ""}`}
+                              onClick={() => handleStatusChange(s)}
+                              disabled={saving}
+                            >
+                              {s
+                                .replace("-", " ")
+                                .replace(/\b\w/g, (c) => c.toUpperCase())}
+                            </button>
+                          ),
+                        )}
+                      </div>
+
+                      {/* Resolution notes — admin only */}
+                      <div className="vl-field" style={{ marginBottom: 20 }}>
+                        <label className="vl-label">
+                          Resolution Notes{" "}
+                          <span
+                            style={{
+                              fontWeight: 400,
+                              textTransform: "none",
+                              fontSize: "0.7rem",
+                              color: "rgba(53,88,114,0.4)",
+                            }}
+                          >
+                            (optional)
+                          </span>
+                        </label>
+                        <textarea
+                          className="vl-textarea"
+                          placeholder="Add notes when changing status…"
+                          value={modal.resolutionNotes || ""}
+                          onChange={(e) =>
+                            setModal((p) => ({
+                              ...p,
+                              resolutionNotes: e.target.value,
+                            }))
+                          }
+                          rows={2}
+                        />
+                      </div>
+                    </>
+                  )}
 
                   {/* Details grid */}
                   <div className="vl-detail-grid">
                     <div>
-                      <div className="vl-detail-label">CVE ID</div>
-                      <div className="vl-detail-value">{modal.data.id}</div>
+                      <div className="vl-detail-label">ID</div>
+                      <div className="vl-detail-value">#{modal.data.id}</div>
                     </div>
-                    <div>
-                      <div className="vl-detail-label">Affected System</div>
-                      <div className="vl-detail-value">
-                        {modal.data.affectedSystem}
+                    {isAdmin && (
+                      <div>
+                        <div className="vl-detail-label">Entity</div>
+                        <div className="vl-detail-value">
+                          {modal.data.governmentEntityName || "—"}
+                        </div>
                       </div>
-                    </div>
+                    )}
                     <div>
                       <div className="vl-detail-label">Severity</div>
                       <div>
@@ -599,46 +641,21 @@ export default function Vulnerabilities() {
                       </div>
                     </div>
                     <div>
-                      <div className="vl-detail-label">Discovered</div>
+                      <div className="vl-detail-label">Reported At</div>
                       <div className="vl-detail-value">
-                        {modal.data.discoveredDate || "—"}
+                        {formatDate(modal.data.reportedAt)}
                       </div>
                     </div>
                     <div>
-                      <div className="vl-detail-label">Due Date</div>
+                      <div className="vl-detail-label">Resolved At</div>
                       <div className="vl-detail-value">
-                        {modal.data.dueDate || "—"}
+                        {formatDate(modal.data.resolvedAt)}
                       </div>
-                    </div>
-                  </div>
-
-                  {/* CVSS score */}
-                  <div className="vl-detail-label">CVSS Score</div>
-                  <div className="vl-cvss-bar-wrap">
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        fontSize: "0.82rem",
-                        fontWeight: 600,
-                        color: "#355872",
-                        marginBottom: 2,
-                      }}
-                    >
-                      <span>{modal.data.cvss}</span>
-                      <span>/ 10</span>
-                    </div>
-                    <div className="vl-cvss-track">
-                      <div
-                        className={`vl-cvss-fill ${modal.data.severity}`}
-                        style={{ width: `${(modal.data.cvss / 10) * 100}%` }}
-                      />
                     </div>
                   </div>
 
                   <div className="vl-detail-divider" />
 
-                  {/* Description */}
                   <div className="vl-detail-label">Description</div>
                   <div
                     style={{
@@ -648,76 +665,31 @@ export default function Vulnerabilities() {
                       marginTop: 6,
                     }}
                   >
-                    {modal.data.description}
+                    {modal.data.description || "—"}
                   </div>
 
-                  <div className="vl-detail-divider" />
-
-                  {/* Assignee */}
-                  <div className="vl-detail-label">Assigned To</div>
-                  <div style={{ marginTop: 8 }}>
-                    {getAssignee(modal.data.assigneeId) ? (
-                      <div className="vl-assignee">
-                        <div
-                          className="vl-assignee-avatar"
-                          style={{
-                            background: getAssignee(modal.data.assigneeId)
-                              .color,
-                            width: 28,
-                            height: 28,
-                            fontSize: "0.7rem",
-                          }}
-                        >
-                          {getAssignee(modal.data.assigneeId).initials}
-                        </div>
-                        <span
-                          style={{
-                            fontSize: "0.87rem",
-                            fontWeight: 500,
-                            color: "#355872",
-                          }}
-                        >
-                          {getAssignee(modal.data.assigneeId).name}
-                        </span>
-                      </div>
-                    ) : (
-                      <span
+                  {modal.data.resolutionNotes && (
+                    <>
+                      <div className="vl-detail-divider" />
+                      <div className="vl-detail-label">Resolution Notes</div>
+                      <div
                         style={{
-                          fontSize: "0.85rem",
-                          color: "rgba(53,88,114,0.4)",
+                          fontSize: "0.87rem",
+                          color: "#355872",
+                          lineHeight: 1.6,
+                          marginTop: 6,
                         }}
                       >
-                        Unassigned
-                      </span>
-                    )}
-                  </div>
+                        {modal.data.resolutionNotes}
+                      </div>
+                    </>
+                  )}
                 </>
               )}
 
-              {/* CREATE / EDIT MODE */}
-              {(modal.mode === "create" || modal.mode === "edit") && (
+              {/* CREATE MODE — EntityAdmin only */}
+              {modal.mode === "create" && (
                 <div className="vl-form-grid">
-                  <div className="vl-field">
-                    <label className="vl-label">CVE ID</label>
-                    <input
-                      className="vl-input"
-                      placeholder="CVE-YYYY-XXXX"
-                      value={modal.data.id}
-                      onChange={(e) => setField("id", e.target.value)}
-                      readOnly={modal.mode === "edit"}
-                    />
-                  </div>
-                  <div className="vl-field">
-                    <label className="vl-label">Affected System</label>
-                    <input
-                      className="vl-input"
-                      placeholder="e.g. Auth Service"
-                      value={modal.data.affectedSystem}
-                      onChange={(e) =>
-                        setField("affectedSystem", e.target.value)
-                      }
-                    />
-                  </div>
                   <div className="vl-field span2">
                     <label className="vl-label">Title</label>
                     <input
@@ -727,125 +699,69 @@ export default function Vulnerabilities() {
                       onChange={(e) => setField("title", e.target.value)}
                     />
                   </div>
-                  <div className="vl-field">
+                  <div className="vl-field span2">
                     <label className="vl-label">Severity</label>
                     <select
                       className="vl-select"
                       value={modal.data.severity}
                       onChange={(e) => setField("severity", e.target.value)}
                     >
-                      <option value="critical">Critical</option>
-                      <option value="high">High</option>
-                      <option value="medium">Medium</option>
                       <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="critical">Critical</option>
                     </select>
-                  </div>
-                  <div className="vl-field">
-                    <label className="vl-label">CVSS Score</label>
-                    <input
-                      className="vl-input"
-                      type="number"
-                      min="0"
-                      max="10"
-                      step="0.1"
-                      placeholder="0.0 – 10.0"
-                      value={modal.data.cvss}
-                      onChange={(e) => setField("cvss", e.target.value)}
-                    />
-                  </div>
-                  <div className="vl-field">
-                    <label className="vl-label">Status</label>
-                    <select
-                      className="vl-select"
-                      value={modal.data.status}
-                      onChange={(e) => setField("status", e.target.value)}
-                    >
-                      <option value="open">Open</option>
-                      <option value="in-progress">In Progress</option>
-                      <option value="resolved">Resolved</option>
-                      <option value="accepted">Accepted</option>
-                    </select>
-                  </div>
-                  <div className="vl-field">
-                    <label className="vl-label">Discovered Date</label>
-                    <input
-                      className="vl-input"
-                      type="date"
-                      value={modal.data.discoveredDate}
-                      onChange={(e) =>
-                        setField("discoveredDate", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="vl-field">
-                    <label className="vl-label">Due Date</label>
-                    <input
-                      className="vl-input"
-                      type="date"
-                      value={modal.data.dueDate}
-                      onChange={(e) => setField("dueDate", e.target.value)}
-                    />
                   </div>
                   <div className="vl-field span2">
                     <label className="vl-label">Description</label>
                     <textarea
                       className="vl-textarea"
                       placeholder="Describe the vulnerability…"
-                      value={modal.data.description}
+                      value={modal.data.description || ""}
                       onChange={(e) => setField("description", e.target.value)}
                     />
                   </div>
                 </div>
               )}
 
-              {/* ASSIGN MODE */}
-              {modal.mode === "assign" && (
-                <>
-                  <div
-                    style={{
-                      fontSize: "0.87rem",
-                      color: "rgba(53,88,114,0.6)",
-                      marginBottom: 20,
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    Select a team member to assign{" "}
-                    <strong style={{ color: "#355872" }}>
-                      {modal.data.title}
-                    </strong>{" "}
-                    to.
+              {/* EDIT MODE — both roles */}
+              {modal.mode === "edit" && (
+                <div className="vl-form-grid">
+                  <div className="vl-field span2">
+                    <label className="vl-label">Title</label>
+                    <input
+                      className="vl-input"
+                      placeholder="Vulnerability title"
+                      value={modal.data.title}
+                      onChange={(e) => setField("title", e.target.value)}
+                    />
                   </div>
-                  <div className="vl-assign-wrap">
-                    <div className="vl-assign-label">Team Members</div>
-                    <div className="vl-assign-list">
-                      {TEAM.map((member) => (
-                        <button
-                          key={member.id}
-                          className={`vl-assignee-chip${modal.data.assigneeId === member.id ? " selected" : ""}`}
-                          onClick={() =>
-                            setField(
-                              "assigneeId",
-                              modal.data.assigneeId === member.id
-                                ? null
-                                : member.id,
-                            )
-                          }
-                        >
-                          <div
-                            className="vl-assignee-chip-avatar"
-                            style={{ background: member.color }}
-                          >
-                            {member.initials}
-                          </div>
-                          {member.name}
-                        </button>
-                      ))}
-                    </div>
+                  <div className="vl-field span2">
+                    <label className="vl-label">Severity</label>
+                    <select
+                      className="vl-select"
+                      value={modal.data.severity}
+                      onChange={(e) => setField("severity", e.target.value)}
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="critical">Critical</option>
+                    </select>
                   </div>
-                </>
+                  <div className="vl-field span2">
+                    <label className="vl-label">Description</label>
+                    <textarea
+                      className="vl-textarea"
+                      placeholder="Describe the vulnerability…"
+                      value={modal.data.description || ""}
+                      onChange={(e) => setField("description", e.target.value)}
+                    />
+                  </div>
+                </div>
               )}
 
-              {/* DELETE MODE */}
+              {/* DELETE MODE — admin only */}
               {modal.mode === "delete" && (
                 <div className="vl-delete-confirm">
                   <div className="vl-delete-icon">
@@ -853,7 +769,9 @@ export default function Vulnerabilities() {
                       <Icon name="trash" />
                     </div>
                   </div>
-                  <div className="vl-delete-title">Delete {modal.data.id}?</div>
+                  <div className="vl-delete-title">
+                    Delete Vulnerability #{modal.data.id}?
+                  </div>
                   <div className="vl-delete-text">
                     This will permanently remove{" "}
                     <strong>{modal.data.title}</strong> from the system. This
@@ -878,56 +796,52 @@ export default function Vulnerabilities() {
                     </div>{" "}
                     Edit
                   </button>
-                  <button
-                    className="vl-btn vl-btn-assign"
-                    onClick={() =>
-                      setModal({ mode: "assign", data: { ...modal.data } })
-                    }
-                  >
-                    <div style={{ width: 14, height: 14 }}>
-                      <Icon name="assign" />
-                    </div>{" "}
-                    Assign
-                  </button>
-                  <button
-                    className="vl-btn vl-btn-delete"
-                    onClick={() =>
-                      setModal({ mode: "delete", data: { ...modal.data } })
-                    }
-                  >
-                    <div style={{ width: 14, height: 14 }}>
-                      <Icon name="trash" />
-                    </div>{" "}
-                    Delete
-                  </button>
+                  {isAdmin && (
+                    <button
+                      className="vl-btn vl-btn-delete"
+                      onClick={() =>
+                        setModal({ mode: "delete", data: { ...modal.data } })
+                      }
+                    >
+                      <div style={{ width: 14, height: 14 }}>
+                        <Icon name="trash" />
+                      </div>{" "}
+                      Delete
+                    </button>
+                  )}
                 </>
               )}
-              {(modal.mode === "create" || modal.mode === "edit") && (
+              {modal.mode === "create" && (
                 <>
                   <button className="vl-btn vl-btn-cancel" onClick={closeModal}>
                     Cancel
                   </button>
-                  <button className="vl-btn vl-btn-save" onClick={handleSave}>
+                  <button
+                    className="vl-btn vl-btn-save"
+                    onClick={handleCreate}
+                    disabled={saving || !modal.data.title}
+                  >
                     <div style={{ width: 14, height: 14 }}>
                       <Icon name="save" />
                     </div>
-                    {modal.mode === "create" ? "Create" : "Save Changes"}
+                    {saving ? "Creating…" : "Create"}
                   </button>
                 </>
               )}
-              {modal.mode === "assign" && (
+              {modal.mode === "edit" && (
                 <>
                   <button className="vl-btn vl-btn-cancel" onClick={closeModal}>
                     Cancel
                   </button>
                   <button
-                    className="vl-btn vl-btn-assign"
-                    onClick={handleAssignSave}
+                    className="vl-btn vl-btn-save"
+                    onClick={handleUpdate}
+                    disabled={saving || !modal.data.title}
                   >
                     <div style={{ width: 14, height: 14 }}>
-                      <Icon name="assign" />
-                    </div>{" "}
-                    Save Assignment
+                      <Icon name="save" />
+                    </div>
+                    {saving ? "Saving…" : "Save Changes"}
                   </button>
                 </>
               )}
@@ -939,11 +853,12 @@ export default function Vulnerabilities() {
                   <button
                     className="vl-btn vl-btn-delete"
                     onClick={handleDelete}
+                    disabled={saving}
                   >
                     <div style={{ width: 14, height: 14 }}>
                       <Icon name="trash" />
-                    </div>{" "}
-                    Delete
+                    </div>
+                    {saving ? "Deleting…" : "Delete"}
                   </button>
                 </>
               )}

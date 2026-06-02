@@ -7,14 +7,28 @@ import Users from "./pages/components/Users.jsx";
 import Policies from "./pages/components/Policies.jsx";
 import Vulnerabilities from "./pages/components/Vulnerabilities.jsx";
 import Reports from "./pages/components/Reports.jsx";
-
+import Notifications from "./pages/components/Notification.jsx";
+import Maturity from "./pages/components/Maturity.jsx";
 import "./App.css";
 
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? children : <Navigate replace to="/login" />;
+/* ── Smart index redirect based on role ── */
+function DashboardIndex() {
+  const { role } = useAuth();
+  if (!role) return null; // wait for role to load
+  if (role === "EntityAdmin") return <Navigate to="vulnerabilities" replace />;
+  return <Navigate to="entities" replace />;
+}
+
+/* ── Blocks unauthenticated users, optionally checks role ── */
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const { isAuthenticated, role } = useAuth();
+  if (!isAuthenticated) return <Navigate replace to="/login" />;
+  if (allowedRoles && !allowedRoles.includes(role))
+    return <Navigate replace to="/dashboard" />;
+  return children;
 };
 
+/* ── Blocks already logged-in users from seeing login page ── */
 const PublicRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
   return !isAuthenticated ? children : <Navigate replace to="/dashboard" />;
@@ -25,6 +39,8 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          {/* Public */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
           <Route
             path="/login"
             element={
@@ -33,6 +49,8 @@ function App() {
               </PublicRoute>
             }
           />
+
+          {/* Protected dashboard shell */}
           <Route
             path="/dashboard"
             element={
@@ -41,14 +59,69 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="entities" element={<GovEntities />} />
-            <Route index element={<Navigate to="entities" replace />} />
-            <Route path="users" element={<Users />} />
-            <Route path="policies" element={<Policies />} />
-            <Route path="vulnerabilities" element={<Vulnerabilities />} />
-            <Route path="reports" element={<Reports />} />
+            {/* Smart default redirect */}
+            <Route index element={<DashboardIndex />} />
+
+            {/* PlatformAdmin only */}
+            <Route
+              path="entities"
+              element={
+                <ProtectedRoute allowedRoles={["PlatformAdmin"]}>
+                  <GovEntities />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="users"
+              element={
+                <ProtectedRoute allowedRoles={["PlatformAdmin"]}>
+                  <Users />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Both roles */}
+            <Route
+              path="vulnerabilities"
+              element={
+                <ProtectedRoute allowedRoles={["PlatformAdmin", "EntityAdmin"]}>
+                  <Vulnerabilities />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="policies"
+              element={
+                <ProtectedRoute allowedRoles={["PlatformAdmin", "EntityAdmin"]}>
+                  <Policies />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="reports"
+              element={
+                <ProtectedRoute allowedRoles={["PlatformAdmin", "EntityAdmin"]}>
+                  <Reports />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="notifications"
+              element={
+                <ProtectedRoute allowedRoles={["PlatformAdmin", "EntityAdmin"]}>
+                  <Notifications />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="maturity"
+              element={
+                <ProtectedRoute allowedRoles={["PlatformAdmin", "EntityAdmin"]}>
+                  <Maturity />
+                </ProtectedRoute>
+              }
+            />
           </Route>
-          <Route path="/" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

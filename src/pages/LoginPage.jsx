@@ -25,8 +25,11 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const data = await login({ email, password });
+      console.log("Full login response:", data); // ← add this
       if (data?.token) {
-        loginUser(data.token);
+        const role = data.roles?.[0] || null; // "PlatformAdmin" or "EntityAdmin"
+
+        loginUser(data.token, role);
         navigate("/dashboard");
       } else {
         setError("Invalid credentials. Please try again.");

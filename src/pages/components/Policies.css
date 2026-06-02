@@ -889,3 +889,32 @@
     grid-template-columns: 1fr;
   }
 }
+.po-icon-btn.delete {
+  color: #c0392b;
+}
+.po-icon-btn.delete:hover {
+  background: rgba(220, 80, 60, 0.06);
+  border-color: #c0392b;
+}
+
+.po-btn-delete {
+  background: rgba(220, 80, 60, 0.1);
+  color: #c0392b;
+  margin-left: auto;
+}
+.po-btn-delete:hover {
+  background: rgba(220, 80, 60, 0.18);
+}
+
+.po-stat-icon.security {
+  background: rgba(220, 80, 60, 0.12);
+  color: #c0392b;
+}
+.po-stat-icon.compliance {
+  background: rgba(156, 213, 255, 0.25);
+  color: #7aaace;
+}
+.po-stat-icon.governance {
+  background: rgba(72, 199, 142, 0.15);
+  color: #2eaa6e;
+}

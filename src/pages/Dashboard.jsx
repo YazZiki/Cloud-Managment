@@ -8,31 +8,79 @@ const NAV_ITEMS = [
   {
     section: "Management",
     items: [
-      { id: "entities", label: "Government Entities", icon: "building" },
-      { id: "users", label: "Users", icon: "users", badge: "3" },
+      {
+        id: "entities",
+        label: "Government Entities",
+        icon: "building",
+        roles: ["PlatformAdmin"],
+      },
+      {
+        id: "users",
+        label: "Users",
+        icon: "users",
+        roles: ["PlatformAdmin"],
+        badge: "3",
+      },
       {
         id: "vulnerabilities",
         label: "Vulnerabilities",
         icon: "shield-alert",
+        roles: ["PlatformAdmin", "EntityAdmin"],
         badge: "12",
       },
-      { id: "policies", label: "Policies", icon: "file-text" },
+      {
+        id: "policies",
+        label: "Policies",
+        icon: "file-text",
+        roles: ["PlatformAdmin", "EntityAdmin"],
+      },
     ],
   },
   {
     section: "Assessment",
     items: [
-      { id: "readiness", label: "Readiness", icon: "activity" },
-      { id: "maturity", label: "Maturity", icon: "bar-chart" },
-      { id: "compliance", label: "Compliance", icon: "check-circle" },
+      {
+        id: "readiness",
+        label: "Readiness",
+        icon: "activity",
+        roles: ["PlatformAdmin", "EntityAdmin"],
+      },
+      {
+        id: "maturity",
+        label: "Maturity",
+        icon: "bar-chart",
+        roles: ["PlatformAdmin", "EntityAdmin"],
+      },
+      {
+        id: "compliance",
+        label: "Compliance",
+        icon: "check-circle",
+        roles: ["PlatformAdmin", "EntityAdmin"],
+      },
     ],
   },
   {
     section: "Operations",
     items: [
-      { id: "notifications", label: "Notifications", icon: "bell", badge: "5" },
-      { id: "support", label: "Support Requests", icon: "headphones" },
-      { id: "reports", label: "Reports", icon: "clipboard" },
+      {
+        id: "notifications",
+        label: "Notifications",
+        icon: "bell",
+        roles: ["PlatformAdmin", "EntityAdmin"],
+        badge: "5",
+      },
+      {
+        id: "support",
+        label: "Support Requests",
+        icon: "headphones",
+        roles: ["PlatformAdmin", "EntityAdmin"],
+      },
+      {
+        id: "reports",
+        label: "Reports",
+        icon: "clipboard",
+        roles: ["PlatformAdmin", "EntityAdmin"],
+      },
     ],
   },
 ];
@@ -148,7 +196,8 @@ function Icon({ name, ...props }) {
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
-  const { logout } = useAuth();
+  const { logout, role } = useAuth();
+  // console.log("Current role:", role);
   const PAGE_TITLES = {
     "/dashboard/entities": "Government Entities",
     "/dashboard/users": "Users",
@@ -179,21 +228,23 @@ export default function Dashboard() {
           {NAV_ITEMS.map((group) => (
             <div className="db-nav-section" key={group.section}>
               <div className="db-nav-label">{group.section}</div>
-              {group.items.map((item) => (
-                <NavLink
-                  key={item.id}
-                  to={`/dashboard/${item.id}`}
-                  className={({ isActive }) =>
-                    `db-nav-item${isActive ? " active" : ""}`
-                  }
-                >
-                  <Icon name={item.icon} />
-                  {item.label}
-                  {item.badge && (
-                    <span className="db-nav-badge">{item.badge}</span>
-                  )}
-                </NavLink>
-              ))}
+              {group.items
+                .filter((item) => role && item.roles.includes(role))
+                .map((item) => (
+                  <NavLink
+                    key={item.id}
+                    to={`/dashboard/${item.id}`}
+                    className={({ isActive }) =>
+                      `db-nav-item${isActive ? " active" : ""}`
+                    }
+                  >
+                    <Icon name={item.icon} />
+                    {item.label}
+                    {item.badge && (
+                      <span className="db-nav-badge">{item.badge}</span>
+                    )}
+                  </NavLink>
+                ))}
             </div>
           ))}
         </nav>

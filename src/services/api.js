@@ -77,3 +77,84 @@ export function suspendGovEntity(id) {
     method: "PUT",
   });
 }
+
+export function getAllVulnerabilities() {
+  return request("/vulnerabilities", { method: "GET" });
+}
+
+export function updateVulnerability(id, body) {
+  return request(`/vulnerabilities/${id}`, {
+    method: "PUT",
+    body,
+  });
+}
+
+export function updateVulnerabilityStatus(id, body) {
+  return request(`/vulnerabilities/${id}/status`, {
+    method: "PUT",
+    body,
+  });
+}
+
+export function deleteVulnerability(id) {
+  return request(`/vulnerabilities/${id}`, { method: "DELETE" });
+}
+
+export function getMyVulnerabilities() {
+  return request("/vulnerabilities/my", { method: "GET" });
+}
+
+export function createVulnerability(body) {
+  return request("/vulnerabilities", { method: "POST", body });
+}
+export function getAllNotifications() {
+  return request("/notifications", { method: "GET" });
+}
+
+export function getMyNotifications() {
+  return request("/notifications/my", { method: "GET" });
+}
+
+export function broadcastNotification(body) {
+  return request("/notifications/broadcast", { method: "POST", body });
+}
+
+export function sendNotificationToEntity(body) {
+  return request("/notifications/send-to-entity", { method: "POST", body });
+}
+
+export function markNotificationRead(id) {
+  return request(`/notifications/${id}/read`, { method: "PUT" });
+}
+
+export function deleteNotification(id) {
+  return request(`/notifications/${id}`, { method: "DELETE" });
+}
+
+export function getAllPolicies() {
+  return request("/policies", { method: "GET" });
+}
+
+export function createPolicy(body) {
+  return request("/policies", { method: "POST", body });
+}
+
+export function updatePolicy(id, body) {
+  return request(`/policies/${id}`, { method: "PUT", body });
+}
+
+export function deletePolicy(id) {
+  return request(`/policies/${id}`, { method: "DELETE" });
+}
+
+export function getMaturityResults() {
+  return request("/maturity/results", { method: "GET" });
+}
+
+export function getMyMaturityResult() {
+  return request("/maturity/my-result", { method: "GET" });
+}
+
+export function submitMaturityAssessment(body) {
+  return request("/maturity/submit", { method: "POST", body });
+}
