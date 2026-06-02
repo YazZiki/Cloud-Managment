@@ -9,6 +9,8 @@ import Vulnerabilities from "./pages/components/Vulnerabilities.jsx";
 import Reports from "./pages/components/Reports.jsx";
 import Notifications from "./pages/components/Notification.jsx";
 import Maturity from "./pages/components/Maturity.jsx";
+import SupportRequests from "./pages/components/SupportRequests.jsx";
+import Readiness from "./pages/components/ReadinessPage.jsx";
 import "./App.css";
 
 /* ── Smart index redirect based on role ── */
@@ -118,6 +120,22 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={["PlatformAdmin", "EntityAdmin"]}>
                   <Maturity />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="support"
+              element={
+                <ProtectedRoute allowedRoles={["PlatformAdmin", "EntityAdmin"]}>
+                  <SupportRequests />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="readiness"
+              element={
+                <ProtectedRoute allowedRoles={["PlatformAdmin"]}>
+                  <Readiness />
                 </ProtectedRoute>
               }
             />

@@ -158,3 +158,34 @@ export function getMyMaturityResult() {
 export function submitMaturityAssessment(body) {
   return request("/maturity/submit", { method: "POST", body });
 }
+
+export function getAllSupportRequests() {
+  return request("/support-requests", { method: "GET" });
+}
+
+export function getMySupportRequests() {
+  return request("/support-requests/my", { method: "GET" });
+}
+
+export function createSupportRequest(body) {
+  return request("/support-requests", { method: "POST", body });
+}
+
+export function replySupportRequest(id, body) {
+  return request(`/support-requests/${id}/reply`, { method: "POST", body });
+}
+
+export function closeSupportRequest(id) {
+  return request(`/support-requests/${id}/close`, { method: "PUT" });
+}
+
+export function deleteSupportRequest(id) {
+  return request(`/support-requests/${id}`, { method: "DELETE" });
+}
+export function getReadinessResults() {
+  return request("/readiness/results", { method: "GET" });
+}
+
+export function getReadinessResultByEntity(entityId) {
+  return request(`/readiness/results/${entityId}`, { method: "GET" });
+}

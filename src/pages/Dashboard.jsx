@@ -43,7 +43,7 @@ const NAV_ITEMS = [
         id: "readiness",
         label: "Readiness",
         icon: "activity",
-        roles: ["PlatformAdmin", "EntityAdmin"],
+        roles: ["PlatformAdmin"],
       },
       {
         id: "maturity",
